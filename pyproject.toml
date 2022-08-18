@@ -4,6 +4,21 @@ version = "0.1.0"
 description = "Provides APA7 style for Pybtex"
 authors = ["Chris Proctor <github.com@accounts.chrisproctor.net>"]
 license = "MIT"
+classifiers = [
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 2.7",
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Topic :: Text Processing :: Markup",
+    "Topic :: Utilities",
+]
+packages = [
+    { include = "formatting" },
+    { include = "labels" },
+    { include = "names" },
+]
 
 [tool.poetry.dependencies]
 python = "^3.9"

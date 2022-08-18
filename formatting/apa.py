@@ -6,9 +6,7 @@ from pybtex.style.template import (
     field, first_of, href, join, optional, optional_field, sentence, tag,
     together, words, node, FieldIsMissing
 )
-
 from pybtex.richtext import Text, Symbol
-
 
 firstlast = find_plugin('pybtex.style.names', 'firstlast')()
 
