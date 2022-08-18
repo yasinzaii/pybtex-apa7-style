@@ -90,15 +90,20 @@ class APAStyle(BaseStyle):
     def format_author_or_editor_and_date(self, e):
         if 'author' in e.persons and 'editor' in e.persons:
             return sentence(sep=' ')[
-                self.format_names('author'), join["(", date, ")."],
-                self.format_editor(e, as_sentence=False)]
+                self.format_names('author'), 
+                self.format_date(e),
+                self.format_editor(e, as_sentence=False)
+            ]
         elif 'author' in e.persons:
             return sentence(sep=' ')[
-                self.format_names('author'), join["(", date, ")"]]
+                self.format_names('author'), 
+                self.format_date(e),
+            ]
         else:
             return sentence(sep=' ')[
                 self.format_editor(e, as_sentence=False),
-                join["(", date, ")"]]
+                self.format_date(e),
+            ]
 
     def format_editor(self, e, as_sentence=True):
         editors = self.format_names('editor', as_sentence=False)
@@ -196,6 +201,11 @@ class APAStyle(BaseStyle):
             ]
         ]
 
+    def format_date(self, e):
+        return sentence[
+            join["(", first_of[optional[date], "n.d."], ")"]
+        ]
+
     def get_article_template(self, e):
         volume_and_pages = first_of[
             optional[
@@ -207,11 +217,9 @@ class APAStyle(BaseStyle):
             pages,
         ]
         if 'author' in e.persons:
-            template = toplevel[
+            return toplevel[
                 self.format_names('author'),
-                sentence[
-                    join["(", date, ")"]
-                ],
+                self.format_date(e),
                 self.format_title(e, 'title'),
                 sentence[
                     tag('em')[field('journal')],
@@ -221,11 +229,9 @@ class APAStyle(BaseStyle):
                 self.format_web_refs(e),
             ]
         else:
-            template = toplevel[
+            return toplevel[
                 self.format_title(e, 'title'),
-                sentence[
-                    join["(", date, ")"]
-                ],
+                self.format_date(e),
                 sentence[
                     tag('em')[field('journal')],
                     optional[volume_and_pages],
@@ -237,120 +243,188 @@ class APAStyle(BaseStyle):
         return template
 
     def get_book_template(self, e):
-        return toplevel[
-            self.format_author_or_editor_and_date(e),
-            sentence(sep=' ')[
-                self.format_btitle(e, 'title'),
-                optional[
-                    sentence[
-                        optional[field('edition'), ' ed.'],
-                        self.format_volume(e),
-                    ]
-                ]
-            ],
-            sentence()[
-                field('publisher'),
-            ],
-            sentence[optional_field('note')],
-        ]
-
-    def get_booklet_template(self, e):
-        return toplevel[
-            sentence(sep=' ')[
-                first_of[
-                    optional[self.format_names(
-                        'author', as_sentence=False)],
-                    "None to claim their bones"
-                ],
-                join["(", first_of[optional[date], "n.d."], ")"]
-            ],
-            self.format_title(e, 'title'),
-            sentence[optional_field('address')],
-            sentence[optional_field('note')],
-        ]
-
-    def get_inbook_template(self, e):
-        return toplevel[
-            sentence(sep=' ')[
-                self.format_names('author'),
-                join["(", date, ")"]
-            ],
-            self.format_title(e, 'title'),
-            sentence(sep=' ')[
-                optional[
-                    "In ",
-                    editor_names(),
-                    ","
-                ],
-                self.format_btitle(e, 'booktitle', as_sentence=False),
-                optional[
-                    join[
-                        "(",
-                        sentence(add_period=False)[
+        if 'author' in e.persons or 'editor' in e.persons:
+            return toplevel[
+                self.format_author_or_editor_and_date(e),
+                sentence(sep=' ')[
+                    self.format_btitle(e, 'title'),
+                    optional[
+                        sentence[
                             optional[field('edition'), ' ed.'],
                             self.format_volume(e),
-                            pages,
-                        ],
-                        ")"
+                        ]
                     ]
-                ]
-            ],
-            sentence()[
-                field('publisher'),
-            ],
-            sentence[optional_field('note')],
-        ]
+                ],
+                sentence()[
+                    field('publisher'),
+                ],
+                sentence[optional_field('note')],
+            ]
+        else:
+            return toplevel[
+                self.format_btitle(e, 'title'),
+                self.format_date(e),
+                sentence(sep=' ')[
+                    optional[
+                        sentence[
+                            optional[field('edition'), ' ed.'],
+                            self.format_volume(e),
+                        ]
+                    ]
+                ],
+                sentence()[
+                    field('publisher'),
+                ],
+                sentence[optional_field('note')],
+            ]
 
+    def get_booklet_template(self, e):
+        if 'author' in e.persons:
+            return toplevel[
+                self.format_names('author'),
+                self.format_date(e),
+                self.format_title(e, 'title'),
+                sentence[optional_field('address')],
+                sentence[optional_field('note')],
+            ]
+        else:
+            return toplevel[
+                self.format_title(e, 'title'),
+                self.format_date(e),
+                sentence[optional_field('address')],
+                sentence[optional_field('note')],
+            ]
+
+    def get_inbook_template(self, e):
+        if 'author' in e.persons:
+
+            return toplevel[
+                self.format_names('author'),
+                self.format_date(e),
+                self.format_title(e, 'title'),
+                sentence(sep=' ')[
+                    optional["In ", editor_names(), ","],
+                    self.format_btitle(e, 'booktitle', as_sentence=False),
+                    optional[
+                        join[
+                            "(",
+                            sentence(add_period=False)[
+                                optional[field('edition'), ' ed.'],
+                                self.format_volume(e),
+                                pages,
+                            ],
+                            ")"
+                        ]
+                    ]
+                ],
+                sentence()[
+                    field('publisher'),
+                ],
+                sentence[optional_field('note')],
+            ]
+        else:
+            return toplevel[
+                self.format_title(e, 'title'),
+                self.format_date(e),
+                sentence(sep=' ')[
+                    optional["In ", editor_names(), ","],
+                    self.format_btitle(e, 'booktitle', as_sentence=False),
+                    optional[
+                        join[
+                            "(",
+                            sentence(add_period=False)[
+                                optional[field('edition'), ' ed.'],
+                                self.format_volume(e),
+                                pages,
+                            ],
+                            ")"
+                        ]
+                    ]
+                ],
+                sentence()[
+                    field('publisher'),
+                ],
+                sentence[optional_field('note')],
+            ]
+
+    
     def get_incollection_template(self, e):
-        return toplevel[
-            self.format_author_or_editor_and_date(e),
-            self.format_title(e, 'title'),
-            sentence(sep=' ')[
-                self.format_btitle(e, 'booktitle', as_sentence=False),
-                optional["(", pages, ")"]
-            ],
-            sentence()[
-                optional_field('publisher'),
-            ],
-            sentence[optional_field('note')],
-        ]
+        if 'author' in e.persons or 'editor' in e.persons:
+            return toplevel[
+                self.format_author_or_editor_and_date(e),
+                self.format_title(e, 'title'),
+                sentence(sep=' ')[
+                    self.format_btitle(e, 'booktitle', as_sentence=False),
+                    optional["(", pages, ")"]
+                ],
+                sentence()[
+                    optional_field('publisher'),
+                ],
+                sentence[optional_field('note')],
+            ]
+        else:
+            return toplevel[
+                self.format_title(e, 'title'),
+                self.format_date(e),
+                sentence(sep=' ')[
+                    self.format_btitle(e, 'booktitle', as_sentence=False),
+                    optional["(", pages, ")"]
+                ],
+                sentence()[
+                    optional_field('publisher'),
+                ],
+                sentence[optional_field('note')],
+            ]
 
     def get_inproceedings_template(self, e):
-        return toplevel[
-            self.format_author_or_editor_and_date(e),
-            self.format_title(e, 'title'),
-            sentence(sep=' ')[
-                self.format_btitle(e, 'booktitle', as_sentence=False),
-                optional["(", pages, ")"]
-            ],
-            sentence()[
-                optional_field('publisher'),
-            ],
-            sentence[optional_field('note')],
-            self.format_web_refs(e)
-        ]
-
-    def get_manual_template(self, e):
-        return toplevel[
-            sentence(sep=' ')[
-                first_of[
-                    optional[self.format_names('author', as_sentence=False)],
-                    optional_field('organization'),
-                    "None to claim their bones"
+        if 'author' in e.persons:
+            return toplevel[
+                self.format_author_or_editor_and_date(e),
+                self.format_title(e, 'title'),
+                sentence(sep=' ')[
+                    self.format_btitle(e, 'booktitle', as_sentence=False),
+                    optional["(", pages, ")"]
                 ],
-                join["(", first_of[optional[date], "n.d."], ")"]
-            ],
-            self.format_btitle(e, 'title'),
-            sentence[optional_field('address')],
-            sentence[optional_field('note')],
-            self.format_web_refs(e)
-        ]
+                sentence[optional_field('publisher')],
+                sentence[optional_field('note')],
+                self.format_web_refs(e)
+            ]
+        else:
+            return toplevel[
+                self.format_title(e, 'title'),
+                self.format_date(e),
+                sentence(sep=' ')[
+                    self.format_btitle(e, 'booktitle', as_sentence=False),
+                    optional["(", pages, ")"]
+                ],
+                sentence[optional_field('publisher')],
+                sentence[optional_field('note')],
+                self.format_web_refs(e)
+            ]
+    def get_manual_template(self, e):
+        if 'author' in e.persons:
+            return toplevel[
+                self.format_names('author'),
+                self.format_date(e),
+                self.format_btitle(e, 'title'),
+                sentence[optional_field('address')],
+                sentence[optional_field('note')],
+                self.format_web_refs(e)
+            ]
+        else:
+            return toplevel[
+                self.format_btitle(e, 'title'),
+                self.format_date(e),
+                sentence[optional_field('address')],
+                sentence[optional_field('note')],
+                self.format_web_refs(e)
+            ]
 
     def get_mastersthesis_template(self, e):
         return toplevel[
             sentence(sep=' ')[
                 self.format_names('author'),
-                join["(", date, ")"]
+                self.format_date(e),
             ],
             sentence(sep=' ')[
                 self.format_btitle(e, 'title', as_sentence=False),
@@ -364,24 +438,25 @@ class APAStyle(BaseStyle):
         ]
 
     def get_misc_template(self, e):
-        template = toplevel[
-            sentence(sep=' ')[
-                first_of[
-                    optional[self.format_names('author', as_sentence=False)],
-                    "None to claim their bones"
-                ],
-                join["(", first_of[optional[date], "n.d."], ")"]
-            ],
-            optional[self.format_btitle(e, 'title')],
-            sentence[optional_field('note')],
-        ]
-        return template
+        if 'author' in e.persons:
+            return toplevel[
+                self.format_names('author'),
+                self.format_date(e),
+                optional[self.format_btitle(e, 'title')],
+                sentence[optional_field('note')],
+            ]
+        else:
+            return toplevel[
+                optional[self.format_btitle(e, 'title')],
+                self.format_date(e),
+                sentence[optional_field('note')],
+            ]
 
     def get_phdthesis_template(self, e):
         return toplevel[
             sentence(sep=' ')[
                 self.format_names('author'),
-                join["(", date, ")"]
+                self.format_date(e),
             ],
             sentence(sep=' ')[
                 self.format_btitle(e, 'title', as_sentence=False),
@@ -395,40 +470,50 @@ class APAStyle(BaseStyle):
         ]
 
     def get_proceedings_template(self, e):
-        return toplevel[
-            sentence(sep=' ')[
-                first_of[
-                    optional[self.format_editor(e, as_sentence=False)],
-                    optional_field('organization'),
-                    "None to claim their bones"
-                ],
-                join["(", first_of[optional[date], "n.d."], ")"]
-            ],
-            self.format_btitle(e, 'title'),
-            sentence()[
-                optional_field('publisher'),
-            ],
-            sentence[optional_field('note')],
-        ]
+        if 'editor' in e.persons:
+            return toplevel[
+                self.format_editor(e),
+                self.format_date(e),
+                self.format_btitle(e, 'title'),
+                sentence[optional_field('publisher')],
+                sentence[optional_field('note')],
+            ]
+        else:
+            return toplevel[
+                self.format_btitle(e, 'title'),
+                self.format_date(e),
+                sentence[optional_field('publisher')],
+                sentence[optional_field('note')],
+            ]
 
     def get_techreport_template(self, e):
-        return toplevel[
-            sentence(sep=' ')[
-                self.format_names('author', as_sentence=False),
-                join["(", date, ")"]
-            ],
-            self.format_btitle(e, 'title'),
-            sentence[field('institution')],
-            sentence[optional_field('note')],
-        ]
+        if 'author' in e.persons:
+            return toplevel[
+                self.format_names('author'),
+                self.format_date(e),
+                self.format_btitle(e, 'title'),
+                sentence[field('institution')],
+                sentence[optional_field('note')],
+            ]
+        else:
+            return toplevel[
+                self.format_btitle(e, 'title'),
+                self.format_date(e),
+                sentence[field('institution')],
+                sentence[optional_field('note')],
+            ]
 
     def get_unpublished_template(self, e):
-        template = toplevel[
-            sentence(sep=' ')[
-                self.format_names('author', as_sentence=False),
-                join["(", first_of[optional[date], "n.d."], ")"]
-            ],
-            self.format_btitle(e, 'title'),
-            sentence[field('note')],
-        ]
-        return template
+        if 'author' in e.persons:
+            return toplevel[
+                self.format_names('author'),
+                self.format_date(e),
+                self.format_btitle(e, 'title'),
+                sentence[field('note')],
+            ]
+        else:
+            return toplevel[
+                self.format_btitle(e, 'title'),
+                self.format_date(e),
+                sentence[field('note')],
+            ]
