@@ -7,15 +7,12 @@ import unicodedata
 
 from pybtex.style.labels import BaseLabelStyle
 
-
 _nonalnum_pattern = re.compile('[^A-Za-z0-9 \-]+', re.UNICODE)
-
 
 def _strip_accents(s):
     return "".join(
         (c for c in unicodedata.normalize('NFD', s)
             if not unicodedata.combining(c)))
-
 
 def _strip_nonalnum(parts):
     """Strip all non-alphanumerical characters from a list of strings.
@@ -25,7 +22,6 @@ def _strip_nonalnum(parts):
     """
     s = "".join(parts)
     return _nonalnum_pattern.sub("", _strip_accents(s))
-
 
 class LabelStyle(BaseLabelStyle):
     def format_labels(self, sorted_entries):

@@ -1,17 +1,16 @@
 import setuptools
 
-
 setuptools.setup(
     name='pybtex-apa-style',
-    version='1.3',
-    author='Naeka',
-    author_email='contact@naeka.fr',
-    description='Pybtex APA-like style',
+    version='0.1',
+    author='Chris Proctor',
+    author_email='chris@chrisproctor.net',
+    description='Pybtex APA7 style',
     url='https://github.com/naeka/pybtex-apa-style',
     py_modules=['formatting.apa', 'labels.apa', 'names.firstlast'],
     entry_points={
-        'pybtex.style.formatting': 'apa = formatting.apa:APAStyle',
-        'pybtex.style.labels': 'apa = labels.apa:LabelStyle',
+        'pybtex.style.formatting': 'apa7 = formatting.apa:APAStyle',
+        'pybtex.style.labels': 'apa7 = labels.apa:LabelStyle',
         'pybtex.style.names': 'firstlast = names.firstlast:NameStyle',
     },
     classifiers=(

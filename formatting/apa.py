@@ -1,8 +1,4 @@
-# -*- coding:Utf-8 -*-
-from __future__ import unicode_literals
-
 import re
-import six
 
 from pybtex.plugin import find_plugin
 from pybtex.style.formatting import BaseStyle, toplevel
@@ -16,26 +12,15 @@ from pybtex.richtext import Text, Symbol
 
 firstlast = find_plugin('pybtex.style.names', 'firstlast')()
 
-if six.PY2:
-    def format_pages(text):
-        dash_re = re.compile(r'-+')
-        pages = Text(Symbol('ndash')).join(
-            re.split(dash_re, six.text_type(text)))
-        if re.search('[-‒–—―]', six.text_type(text)):
-            return Text("pp.", Symbol('nbsp'), pages)
-        return Text("p.", Symbol('nbsp'), pages)
-else:
-    def format_pages(text):
-        dash_re = re.compile(r'-+')
-        pages = Text(Symbol('ndash')).join(text.split(dash_re))
-        if re.search('[-‒–—―]', str(text)):
-            return Text("pp.", Symbol('nbsp'), pages)
-        return Text("p.", Symbol('nbsp'), pages)
-
+def format_pages(text):
+    dash_re = re.compile(r'-+')
+    pages = Text(Symbol('ndash')).join(text.split(dash_re))
+    if re.search('[-‒–—―]', str(text)):
+        return Text("pp.", Symbol('nbsp'), pages)
+    return Text("p.", Symbol('nbsp'), pages)
 
 pages = field('pages', apply_func=format_pages)
 date = words[field('year'), optional[", ", field('month')]]
-
 
 @node
 def apa_names(children, context, role, **kwargs):
@@ -51,18 +36,16 @@ def apa_names(children, context, role, **kwargs):
 
     style = context['style']
 
-    if len(persons) > 7:
-        persons = persons[:6] + persons[-1:]
+    if len(persons) > 20:
         formatted_names = [style.format_name(
-            person, style.abbreviate_names) for person in persons]
-        return join(sep=', ', last_sep=', … ')[
-            formatted_names].format_data(context)
+            person, style.abbreviate_names) for person in persons[:20]]
+        formatted_names += [richtext.Text("et al.")]
+        return join(sep=', ')[formatted_names].format_data(context)
     else:
         formatted_names = [style.format_name(
             person, style.abbreviate_names) for person in persons]
-        return join(sep=', ', sep2=', & ', last_sep=', & ')[
+        return join(sep=', ', sep2=' & ', last_sep=', & ')[
             formatted_names].format_data(context)
-
 
 @node
 def editor_names(children, context, with_suffix=True, **kwargs):
@@ -89,15 +72,14 @@ def editor_names(children, context, with_suffix=True, **kwargs):
         formatted_names
     ].format_data(context)
 
-
 class APAStyle(BaseStyle):
-    name = 'apa'
+    name = 'apa7'
     default_name_style = 'lastfirst'
     default_sorting_style = 'author_year_title'
-    default_label_style = 'apa'
+    default_label_style = 'apa7'
 
     def __init__(self, *args, **kwargs):
-        super(APAStyle, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.abbreviate_names = True
 
     def format_names(self, role, as_sentence=True):
@@ -164,7 +146,6 @@ class APAStyle(BaseStyle):
             return formatted_title
 
     def format_web_refs(self, e):
-        # Based on urlbst output.web.refs
         return sentence(add_period=False)[
             optional[self.format_url(e)],
             optional[self.format_eprint(e)],
@@ -173,7 +154,6 @@ class APAStyle(BaseStyle):
         ]
 
     def format_url(self, e):
-        # Based on urlbst format.url
         return words[
             'URL:',
             href[
@@ -183,7 +163,6 @@ class APAStyle(BaseStyle):
         ]
 
     def format_pubmed(self, e):
-        # Based on urlbst format.pubmed
         return href[
             join[
                 'https://www.ncbi.nlm.nih.gov/pubmed/',
@@ -196,7 +175,6 @@ class APAStyle(BaseStyle):
         ]
 
     def format_doi(self, e):
-        # Based on urlbst format.doi
         return href[
             join[
                 'https://doi.org/',
@@ -209,7 +187,6 @@ class APAStyle(BaseStyle):
         ]
 
     def format_eprint(self, e):
-        # Based on urlbst format.eprint
         return href[
             join[
                 'https://arxiv.org/abs/',
@@ -222,38 +199,46 @@ class APAStyle(BaseStyle):
         ]
 
     def get_article_template(self, e):
-        # Required fields: author, title, journal, year
-        # Optional fields: volume, number, pages, month, note, key
         volume_and_pages = first_of[
-            # Volume and pages, with optional issue number
             optional[
                 join[
                     self.format_volume(e, for_article=True),
                     optional[', ', field('pages')]
                 ],
             ],
-            # Pages only
             pages,
         ]
-        template = toplevel[
-            self.format_names('author'),
-            sentence[
-                join["(", date, ")"]
-            ],
-            self.format_title(e, 'title'),
-            sentence[
-                tag('em')[field('journal')],
-                optional[volume_and_pages],
-            ],
-            sentence[optional_field('note')],
-            self.format_web_refs(e),
-        ]
+        if 'author' in e.persons:
+            template = toplevel[
+                self.format_names('author'),
+                sentence[
+                    join["(", date, ")"]
+                ],
+                self.format_title(e, 'title'),
+                sentence[
+                    tag('em')[field('journal')],
+                    optional[volume_and_pages],
+                ],
+                sentence[optional_field('note')],
+                self.format_web_refs(e),
+            ]
+        else:
+            template = toplevel[
+                self.format_title(e, 'title'),
+                sentence[
+                    join["(", date, ")"]
+                ],
+                sentence[
+                    tag('em')[field('journal')],
+                    optional[volume_and_pages],
+                ],
+                sentence[optional_field('note')],
+                self.format_web_refs(e),
+            ]
+
         return template
 
     def get_book_template(self, e):
-        # Required fields: author/editor, title, publisher, year
-        # Optional fields: volume, series, address, edition, month, note, key,
-        #                  isbn
         return toplevel[
             self.format_author_or_editor_and_date(e),
             sentence(sep=' ')[
@@ -265,17 +250,13 @@ class APAStyle(BaseStyle):
                     ]
                 ]
             ],
-            sentence(sep=': ')[
-                optional_field('address'),
+            sentence()[
                 field('publisher'),
             ],
             sentence[optional_field('note')],
         ]
 
     def get_booklet_template(self, e):
-        # Required fields: title
-        # Optional fields: author, howpublished, address, month, year, note,
-        #                  key
         return toplevel[
             sentence(sep=' ')[
                 first_of[
@@ -291,8 +272,6 @@ class APAStyle(BaseStyle):
         ]
 
     def get_inbook_template(self, e):
-        # Required fields: author/editor, title, chapter/pages, publisher, year
-        # Optional fields: volume, series, address, edition, month, note, key
         return toplevel[
             sentence(sep=' ')[
                 self.format_names('author'),
@@ -318,17 +297,13 @@ class APAStyle(BaseStyle):
                     ]
                 ]
             ],
-            sentence(sep=': ')[
-                optional_field('address'),
+            sentence()[
                 field('publisher'),
             ],
             sentence[optional_field('note')],
         ]
 
     def get_incollection_template(self, e):
-        # Required fields: author, title, booktitle, year
-        # Optional fields: editor, pages, organization, publisher, address,
-        #                  month, note, key
         return toplevel[
             self.format_author_or_editor_and_date(e),
             self.format_title(e, 'title'),
@@ -336,17 +311,13 @@ class APAStyle(BaseStyle):
                 self.format_btitle(e, 'booktitle', as_sentence=False),
                 optional["(", pages, ")"]
             ],
-            sentence(sep=': ')[
-                optional_field('address'),
+            sentence()[
                 optional_field('publisher'),
             ],
             sentence[optional_field('note')],
         ]
 
     def get_inproceedings_template(self, e):
-        # Required fields: author, title, booktitle, year
-        # Optional fields: editor, pages, organization, publisher, address,
-        #                  month, note, key
         return toplevel[
             self.format_author_or_editor_and_date(e),
             self.format_title(e, 'title'),
@@ -354,8 +325,7 @@ class APAStyle(BaseStyle):
                 self.format_btitle(e, 'booktitle', as_sentence=False),
                 optional["(", pages, ")"]
             ],
-            sentence(sep=': ')[
-                optional_field('address'),
+            sentence()[
                 optional_field('publisher'),
             ],
             sentence[optional_field('note')],
@@ -363,9 +333,6 @@ class APAStyle(BaseStyle):
         ]
 
     def get_manual_template(self, e):
-        # Required fields: title
-        # Optional fields: author, organization, address, edition, month, year,
-        #                  note, key
         return toplevel[
             sentence(sep=' ')[
                 first_of[
@@ -382,8 +349,6 @@ class APAStyle(BaseStyle):
         ]
 
     def get_mastersthesis_template(self, e):
-        # Required fields: author, title, school, year
-        # Optional fields: address, month, note, key
         return toplevel[
             sentence(sep=' ')[
                 self.format_names('author'),
@@ -401,9 +366,6 @@ class APAStyle(BaseStyle):
         ]
 
     def get_misc_template(self, e):
-        # Required fields: aucun
-        # Optional fields: author, title, howpublished, month, year, note, key,
-        #                  type
         template = toplevel[
             sentence(sep=' ')[
                 first_of[
@@ -418,8 +380,6 @@ class APAStyle(BaseStyle):
         return template
 
     def get_phdthesis_template(self, e):
-        # Required fields: author, title, school, year
-        # Optional fields: address, month, note, key
         return toplevel[
             sentence(sep=' ')[
                 self.format_names('author'),
@@ -437,9 +397,6 @@ class APAStyle(BaseStyle):
         ]
 
     def get_proceedings_template(self, e):
-        # Required fields: title, year
-        # Optional fields: editor, publisher, organization, address, month,
-        #                  note, key
         return toplevel[
             sentence(sep=' ')[
                 first_of[
@@ -450,16 +407,13 @@ class APAStyle(BaseStyle):
                 join["(", first_of[optional[date], "n.d."], ")"]
             ],
             self.format_btitle(e, 'title'),
-            sentence(sep=': ')[
-                optional_field('address'),
+            sentence()[
                 optional_field('publisher'),
             ],
             sentence[optional_field('note')],
         ]
 
     def get_techreport_template(self, e):
-        # Required fields: author, title, institution, year
-        # Optional fields: type, number, address, month, note, key
         return toplevel[
             sentence(sep=' ')[
                 self.format_names('author', as_sentence=False),
@@ -471,8 +425,6 @@ class APAStyle(BaseStyle):
         ]
 
     def get_unpublished_template(self, e):
-        # Required fields: author, title, note
-        # Optional fields: month, year, key
         template = toplevel[
             sentence(sep=' ')[
                 self.format_names('author', as_sentence=False),
