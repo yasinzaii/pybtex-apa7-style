@@ -19,7 +19,7 @@ $ pip install pybtex pybtex-apa7-style
 Pybtex uses [Python's plugin system](https://packaging.python.org/en/latest/guides/creating-and-discovering-plugins/).
 To use APA7, load it as a plugin.
 
-```
+```python3
 from pybtex.plugin import find_plugin
 from pybtex.database import parse_file
 APA = find_plugin('pybtex.style.formatting', 'apa7')()
