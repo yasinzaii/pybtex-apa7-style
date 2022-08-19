@@ -1,16 +1,17 @@
 [tool.poetry]
 name = "pybtex-apa7-style"
-version = "0.1.0"
+version = "0.1.1"
 description = "Provides APA7 style for Pybtex"
+readme = "README.md"
 authors = ["Chris Proctor <github.com@accounts.chrisproctor.net>"]
+homepage = "https://github.com/cproctor/pybtex-apa7-style"
+repository = "https://github.com/cproctor/pybtex-apa7-style"
 license = "MIT"
 classifiers = [
     "Operating System :: OS Independent",
     "Programming Language :: Python",
-    "Programming Language :: Python :: 2.7",
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent",
     "Topic :: Text Processing :: Markup",
     "Topic :: Utilities",
 ]
