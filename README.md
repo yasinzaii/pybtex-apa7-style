@@ -10,7 +10,7 @@ This plugin provides APA7 style.
 
 ## Installation
 
-```
+```shell
 $ pip install pybtex pybtex-apa7-style
 ```
 
