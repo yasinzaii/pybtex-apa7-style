@@ -18,7 +18,7 @@ def format_pages(text):
     return Text("p.", Symbol('nbsp'), pages)
 
 pages = field('pages', apply_func=format_pages)
-date = words[field('year'), optional[", ", field('month')]]
+date = words(sep='')[field('year'), optional[", ", field('month')]]
 
 @node
 def apa_names(children, context, role, **kwargs):
