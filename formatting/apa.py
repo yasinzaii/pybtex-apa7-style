@@ -37,7 +37,7 @@ def apa_names(children, context, role, **kwargs):
     if len(persons) > 20:
         formatted_names = [style.format_name(
             person, style.abbreviate_names) for person in persons[:20]]
-        formatted_names += [richtext.Text("et al.")]
+        formatted_names += [Text("et al.")]
         return join(sep=', ')[formatted_names].format_data(context)
     else:
         formatted_names = [style.format_name(
